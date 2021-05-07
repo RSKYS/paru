@@ -229,7 +229,7 @@ pub async fn get_upgrades<'a, 'b>(
         return Ok(upgrades);
     }
 
-    let db = config.alpm.localdb();
+    let localdb = config.alpm.localdb();
     let n_max = repo_upgrades.len() + aur_upgrades.len() + devel_upgrades.len();
     let n_max = n_max.to_string().len();
 
@@ -259,19 +259,19 @@ pub async fn get_upgrades<'a, 'b>(
 
     let old_max = repo_upgrades
         .iter()
-        .map(|p| db.pkg(p.name()).unwrap().version().as_str().len())
+        .map(|p| localdb.pkg(p.name()).unwrap().version().as_str().len())
         .chain(aur_upgrades.iter().map(|p| p.local.version().len()))
         .chain(
             devel_upgrades
                 .iter()
-                .filter_map(|p| db.pkg(p.as_str()).ok())
+                .filter_map(|p| localdb.pkg(p.as_str()).ok())
                 .map(|p| p.version().len()),
         )
         .max()
         .unwrap_or(0);
 
     for (n, pkg) in repo_upgrades.iter().rev().enumerate().rev() {
-        let local_pkg = config.alpm.localdb().pkg(pkg.name())?;
+        let local_pkg = localdb.pkg(pkg.name())?;
         print_upgrade(
             config,
             n + aur_upgrades.len() + devel_upgrades.len() + 1,
@@ -311,7 +311,7 @@ pub async fn get_upgrades<'a, 'b>(
         let remote = remote.as_deref().unwrap_or("devel");
         let current = aurdbs
             .pkg(pkg.as_str())
-            .or_else(|_| db.pkg(pkg.as_str()))
+            .or_else(|_| localdb.pkg(pkg.as_str()))
             .unwrap();
         let ver = current.version();
         print_upgrade(

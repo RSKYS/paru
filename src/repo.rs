@@ -123,11 +123,16 @@ fn is_local_db(db: &alpm::Db) -> bool {
 
 pub fn repo_aur_dbs(config: &Config) -> (AlpmListMut<Db>, AlpmListMut<Db>) {
     let dbs = config.alpm.syncdbs();
-    let mut aur = dbs.to_list();
-    let mut repo = dbs.to_list();
-    aur.retain(|db| is_configured_local_db(config, db));
-    repo.retain(|db| !is_configured_local_db(config, db));
-    (repo, aur)
+    let (repo, aur): (Vec<_>, Vec<_>) = dbs
+        .iter()
+        .partition(|db| !is_configured_local_db(config, db));
+    let mut repo_list = AlpmListMut::new(&config.alpm);
+    repo_list.extend(repo);
+
+    let mut aur_list = AlpmListMut::new(&config.alpm);
+    aur_list.extend(aur);
+
+    (repo_list, aur_list)
 }
 
 pub fn refresh<S: AsRef<OsStr>>(config: &mut Config, repos: &[S]) -> Result<i32> {
